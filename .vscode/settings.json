@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.php": "php",
+        "node.h": "c",
+        "enums.h": "c",
+        "bits.h": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "policy.h": "c",
+        "rules.h": "c",
+        "cond.h": "c",
+        "headers.h": "c"
+    }
+}
