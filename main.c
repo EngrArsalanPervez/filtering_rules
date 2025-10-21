@@ -30,7 +30,7 @@ int main(void) {
                                 .sub_protocol = DPI_PROTO_QUIC,
                                 .src_ip = 84215046};
 
-  evaluate_rules(&meta_rule3);
+  evaluate_rules(&meta_rule1);
 
   free_streams();
   return 0;
