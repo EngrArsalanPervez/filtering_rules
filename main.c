@@ -1,11 +1,11 @@
 #include "headers.h"
 
 #include "bits.h"
+#include "cond.h"
 #include "enums.h"
 #include "node.h"
 #include "policy.h"
 #include "rules.h"
-#include "cond.h"
 
 int main(void) {
   create_policy();
@@ -26,11 +26,14 @@ int main(void) {
                                 .application = DPI_APP_FACEBOOK};
 
   // Rule3
-  metadata UNUSED meta_rule3 = {.application = DPI_APP_YOUTUBE,
-                                .sub_protocol = DPI_PROTO_QUIC,
-                                .src_ip = 84215046};
+  metadata UNUSED meta_rule3 = {
+      .application = DPI_APP_YOUTUBE, .sub_protocol = 0, .src_ip = 84215046};
 
-  evaluate_rules(&meta_rule1);
+  // Rule4
+  metadata UNUSED meta_rule4 = {
+      .src_ip = 84215045, .application = DPI_APP_YOUTUBE, .src_port = 8086};
+
+  evaluate_rules(&meta_rule4);
 
   free_streams();
   return 0;

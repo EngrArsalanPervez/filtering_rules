@@ -9,19 +9,25 @@ extern uint16_t total_nodes;
 
 void create_policy(void) {
   clear_file();
+  
   create_rule1();
   create_rule2();
   create_rule3();
+  create_rule4();
+
   create_vargs();
 }
 
-typedef int (*condition_fn)(uint8_t* value1, uint8_t* value2);
+typedef int (*condition_fn)(uint8_t* value1, uint8_t* value2, uint8_t* bytes);
 condition_fn condition_table[] = {
     [ip_subnet] = match_ip_subnet,
     [port_equal] = match_port_equal,
     [port_range] = match_port_range,
+    [port_one_of] = match_port_one_of,
     [application_equal] = match_application_equal,
+    [application_one_of] = match_application_one_of,
     [sub_protocol_equal] = match_sub_protocol_equal,
+    [sub_protocol_one_of] = match_sub_protocol_one_of,
 };
 
 uint8_t* get_field_value(NodeField field, metadata* meta) {
@@ -52,36 +58,22 @@ uint8_t* get_field_value(NodeField field, metadata* meta) {
 int check_condition(struct Node* node, metadata* meta) {
   uint8_t* value1 = get_field_value(node->field, meta);
 
-  uint16_t offset = node->varg_offset;
-  uint8_t* varg_len = g_bitstream + (offset / 8);
-  uint8_t* varg_value = g_bitstream + ((offset + 8) / 8);
+  uint16_t offset = 0;
+  uint8_t varg_len = 0;
+  uint8_t value2[64] = {0};
+  uint8_t total_bytes = 0;
 
-  uint8_t value8;
-  uint16_t value16;
-  uint32_t value32;
-  uint8_t* value2 = NULL;
-
-  switch (*varg_len) {
-    case 8:
-      memcpy(&value8, varg_value, sizeof(uint8_t));
-      value2 = (uint8_t*)&value8;
-      break;
-    case 16:
-      memcpy(&value16, varg_value, sizeof(uint16_t));
-      value16 = ntohs(value16);
-      value2 = (uint8_t*)&value16;
-      break;
-    case 32:
-      memcpy(&value32, varg_value, sizeof(uint32_t));
-      value32 = ntohl(value32);
-      value2 = (uint8_t*)&value32;
-      break;
-    default:
-      printf("Unknown varg_len = %u\n", *varg_len);
-      return 0;
+  offset = node->varg_offset;
+  for (uint8_t i = 0; i < node->total_vargs; i++) {
+    varg_len = (uint8_t)g_bitstream[offset / 8];
+    uint8_t bytes = varg_len / 8;
+    for (uint8_t j = 0; j < bytes; j++) {
+      value2[total_bytes + j] = (uint8_t)g_bitstream[((offset + 8) / 8) + j];
+    }
+    total_bytes += bytes;
+    offset += 8 + varg_len;
   }
-
-  return condition_table[node->function_pointer](value1, value2);
+  return condition_table[node->function_pointer](value1, value2, &total_bytes);
 }
 
 int dfs_preorder(uint8_t node_type,
@@ -134,7 +126,7 @@ void evaluate_rules(metadata* meta) {
   size_t index = 0;
   uint16_t rule_id = 0;
 
-  for (uint16_t i = 0; i < MAX_RULES; i++) {
+  for (uint16_t i = 0; i < TOTAL_RULES; i++) {
     rule_id = g_bitstream[index / 8];
     rule_id = rule_id << 8;
     rule_id += g_bitstream[(index / 8) + 1];

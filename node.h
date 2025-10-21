@@ -36,5 +36,6 @@ void create_node(uint16_t rule_id,
   uint16_t left_child_offset,
   uint16_t right_child_offset);
 void print_nodes(void);
+const char* node_field_to_string(NodeField type);
 
 #endif  // _NODE_H
